@@ -21,7 +21,9 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.Point;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -162,28 +164,19 @@ public class GraphicOverlay<T extends GraphicOverlay.Graphic> extends View {
         eraser.setAntiAlias(true);
         eraser.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
 
-        RectF rect = new RectF(left, top, AppUtil.dpToPx(getContext(), rectWidth) + left, AppUtil.dpToPx(getContext(), rectHeight) + top);
+        int canvasW = getWidth();
+        int canvasH = getHeight();
+        Point centerOfCanvas = new Point(canvasW / 2, canvasH / 2);
+        float rectW = AppConstants.BARCODE_RECT_WIDTH;
+        float rectH = AppConstants.BARCODE_RECT_HEIGHT;
+        float left = centerOfCanvas.x - (rectW / 2);
+        float top = centerOfCanvas.y - (rectH / 2);
+        float right = centerOfCanvas.x + (rectW / 2);
+        float bottom = centerOfCanvas.y + (rectH / 2);
+        RectF rect = new RectF(left, top, right, bottom);
+
         canvas.drawRoundRect(rect, (float) cornerRadius, (float) cornerRadius, eraser);
 
-        // draw horizontal line
-        Paint line = new Paint();
-        line.setColor(lineColor);
-        line.setStrokeWidth(Float.valueOf(lineWidth));
-
-        // draw the line to product animation
-        if (endY >= top + AppUtil.dpToPx(getContext(), rectHeight) + frames) {
-            revAnimation = true;
-        } else if (endY == top + frames) {
-            revAnimation = false;
-        }
-
-        // check if the line has reached to bottom
-        if (revAnimation) {
-            endY -= frames;
-        } else {
-            endY += frames;
-        }
-        canvas.drawLine(left, endY, left + AppUtil.dpToPx(getContext(), rectWidth), endY, line);
         invalidate();
     }
 }
