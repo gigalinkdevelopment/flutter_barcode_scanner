@@ -15,14 +15,20 @@
  */
 package com.amolg.flutterbarcodescanner.camera;
 
+import com.amolg.flutterbarcodescanner.constants.AppConstants;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.graphics.Point;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
+import android.hardware.Camera.Area;
 import android.os.Build;
 import android.os.SystemClock;
 import androidx.annotation.Nullable;
@@ -33,6 +39,7 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.WindowManager;
+import android.view.Display;
 
 import com.google.android.gms.common.images.Size;
 import com.google.android.gms.vision.Detector;
@@ -47,7 +54,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import android.util.DisplayMetrics;
 
 @SuppressWarnings("deprecation")
 public class CameraSource {
@@ -479,9 +486,35 @@ public class CameraSource {
     public boolean setFocusMode(@FocusMode String mode) {
         synchronized (mCameraLock) {
             if (mCamera != null && mode != null) {
+
+                DisplayMetrics metrics = new DisplayMetrics();
+
+                WindowManager wm = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
+                Display display = wm.getDefaultDisplay();
+
+                int canvasW = display.getWidth();
+                int canvasH = display.getHeight();
+
+                Point centerOfCanvas = new Point(canvasW / 2, canvasH / 2);
+
+                int rectW = AppConstants.BARCODE_RECT_WIDTH;
+                int rectH = AppConstants.BARCODE_RECT_HEIGHT;
+                int left = centerOfCanvas.x - (rectW / 2);
+                int top = centerOfCanvas.y - (rectH / 2);
+                int right = centerOfCanvas.x + (rectW / 2);
+                int bottom = centerOfCanvas.y + (rectH / 2);
+                Rect rect = new Rect(left, top, right, bottom);
+        
+                ArrayList<Camera.Area> focusAreas = new ArrayList<Camera.Area>();
+                focusAreas.add(new Camera.Area(rect, 1000));
+
                 Camera.Parameters parameters = mCamera.getParameters();
                 if (parameters.getSupportedFocusModes().contains(mode)) {
                     parameters.setFocusMode(mode);
+                    parameters.setMeteringAreas(focusAreas);
+                    parameters.setFocusAreas(focusAreas);
+
+
                     mCamera.setParameters(parameters);
                     mFocusMode = mode;
                     return true;
